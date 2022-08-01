@@ -1,0 +1,9 @@
+IisExpressAdminCmd.exe setupsslUrl -url:https://192.168.0.100:20241 -UseSelfSigned
+netsh http add urlacl url=http://localhost:20240/ user=todos
+netsh http add urlacl url=https://localhost:20241/ user=todos
+
+
+netsh http delete urlacl url=http://*:20240/ user=todos
+netsh http add urlacl url=http://192.168.0.100:20240/ user=todos
+
+
