@@ -22,16 +22,12 @@ namespace ALMA_API.Models.Db
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var config =
-                    new ConfigurationBuilder()
-                        .AddEnvironmentVariables()
-                        .Build();
-                
-                var ip = Environment.GetEnvironmentVariable("MYSQL_SERVER_IP");
-                var port = Environment.GetEnvironmentVariable("MYSQL_SERVER_PORT");
-                var user = Environment.GetEnvironmentVariable("MYSQL_SERVER_USER");
-                var password = Environment.GetEnvironmentVariable("MYSQL_SERVER_PASSWORD");
-                var database = Environment.GetEnvironmentVariable("MYSQL_SERVER_DATABASE");
+                var config = new ConfigurationBuilder().AddEnvironmentVariables().Build();
+                var ip = config["MYSQL_SERVER_IP"];
+                var port = config["MYSQL_SERVER_PORT"];
+                var user = config["MYSQL_SERVER_USER"];
+                var password = config["MYSQL_SERVER_PASSWORD"];
+                var database = config["MYSQL_SERVER_DATABASE"];
                 var connectionString = $"server={ip};port={port};user={user};password={password};database={database}";
                 var serverVersion = new MySqlServerVersion(new Version(8, 0, 1));
                 optionsBuilder.UseMySql(connectionString, serverVersion);

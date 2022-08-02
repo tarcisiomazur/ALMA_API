@@ -23,3 +23,10 @@ public class RequestRegister : BaseRequest
     [StringValidator(MinLength = 2, MaxLength = 10)]
     public string DeviceId { get; set; }
 }
+
+public class RequestChange : BaseRequest
+{
+    [Required] [EmailAddress] public string Email { get; set; }
+    [Required] public string OldPassword { get; set; }
+    [Required] public string NewPassword { get; set; }
+}

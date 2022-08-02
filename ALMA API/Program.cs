@@ -4,8 +4,8 @@ using ALMA_API.Utils;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
-var builder = WebApplication.CreateBuilder(args);
 DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), "config.env"));
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
