@@ -1,14 +1,17 @@
 using System.Text;
 using ALMA_API.Controllers;
+using ALMA_API.Middleware;
 using ALMA_API.Utils;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using WebSocketMiddleware = Microsoft.AspNetCore.WebSockets.WebSocketMiddleware;
 
 DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), "config.env"));
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+builder.Services.AddSingleton<WebSocketConnectionManager>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -64,7 +67,11 @@ app.UseCors("ApiCorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<AuthMiddleware>();
-    
+app.UseWebSockets(new WebSocketOptions()
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(10) //TODO reduzir
+});
+app.UseMiddleware<WebSocketServerMiddleware>();
 app.MapControllers();
 
 app.Run();
