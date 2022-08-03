@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace ALMA_API.Controllers;
+namespace ALMA_API.Middleware;
 
 public class AuthMiddleware
 {

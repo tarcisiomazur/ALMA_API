@@ -1,7 +1,7 @@
 using System.Security.Claims;
+using ALMA_API.Middleware;
 using ALMA_API.Models.Db;
 using ALMA_API.Models.Responses;
-using ALMA_API.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +12,7 @@ namespace ALMA_API.Controllers;
 [Route("api/userData")]
 public class UserController : BaseController
 {
-    public UserController(IConfiguration configuration) : base(configuration) { }
+    public UserController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
     
     [HttpGet]
     public ActionResult<BaseResponse> GetUserData()

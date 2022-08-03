@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using ALMA_API.Middleware;
 using ALMA_API.Models.Db;
 using ALMA_API.Models.Requests;
 using ALMA_API.Models.Responses;
@@ -15,7 +16,7 @@ namespace ALMA_API.Controllers
     [ApiController]
     public class AuthController : BaseController
     {
-        public AuthController(IConfiguration configuration) : base(configuration) { }
+        public AuthController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
         
         [AllowAnonymous]
         [HttpPost]
@@ -76,7 +77,7 @@ namespace ALMA_API.Controllers
                 }
                 else
                 {
-                    responseLogin.MessageList.Add("Email incorreto");
+                    responseLogin.MessageList.Add("Email não encontrado");
                 }
             }
 
@@ -127,14 +128,14 @@ namespace ALMA_API.Controllers
                 return new BaseResponse("Email não encontrado");
             }
 
-            if (!CryptoUtil.VerifyPassword(requestChange.OldPassword, user.Salt, user.Password))
+            if (!user.ChangePassword && !CryptoUtil.VerifyPassword(requestChange.OldPassword, user.Salt, user.Password))
             {
                 return new BaseResponse("Senha antiga incorreta");
             }
 
             user.Salt = CryptoUtil.GenerateSalt();
             user.Password = CryptoUtil.HashMultiple(requestChange.NewPassword, user.Salt);
-            user.ChangePassword = true;
+            user.ChangePassword = false;
             db.SaveChanges();
             return response with {Success = true};
         }

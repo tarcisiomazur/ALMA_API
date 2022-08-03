@@ -27,6 +27,6 @@ public class RequestRegister : BaseRequest
 public class RequestChange : BaseRequest
 {
     [Required] [EmailAddress] public string Email { get; set; }
-    [Required] public string OldPassword { get; set; }
+    public string OldPassword { get; set; }
     [Required] public string NewPassword { get; set; }
 }

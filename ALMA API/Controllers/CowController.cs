@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ALMA_API.Middleware;
 using ALMA_API.Models.Db;
 using ALMA_API.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,7 @@ namespace ALMA_API.Controllers;
 [Route("api/cow")]
 public class CowController : BaseController
 {
-    public CowController(IConfiguration configuration) : base(configuration) { }
+    public CowController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
 
 
     [HttpGet]
@@ -36,6 +37,7 @@ public class CowController : BaseController
             }
 
             var list = db.Cow.Where(cow => cow.deathDate == null && cow.FarmId == user.FarmId).ToList();
+            ConnectionManager.SendToAllClients(id, "hi");
             return new AppResponse()
             {
                 Success = true,
