@@ -9,7 +9,7 @@ public class WebSocketConnectionManager
     private ConcurrentDictionary<string, Tuple<WebSocket, int>> _unAuthSockets = new ();
     private ConcurrentDictionary<int, Dictionary<string,WebSocket>> _authSockets = new ();
 
-    public string AddSocket(WebSocket socket)
+    public string AddSocket(WebSocket socket, int userId)
     {
         string connId;
         var unAuth = new Tuple<WebSocket,int>(socket, 0);
@@ -17,7 +17,19 @@ public class WebSocketConnectionManager
         {
             connId = Guid.NewGuid().ToString();
         } while (!_unAuthSockets.TryAdd(connId, unAuth));
-
+        
+        _authSockets.AddOrUpdate(userId,
+            _ => new Dictionary<string, WebSocket>()
+            {
+                {connId, socket}
+            },
+            (_, sockets) =>
+            {
+                sockets.Add(connId, socket);
+                return sockets;
+            }
+        );
+        
         return connId;
     }
 
@@ -29,30 +41,6 @@ public class WebSocketConnectionManager
         }
 
         return true;
-    }
-
-    public void Vinculate(string connId, int userId)
-    {
-        if (_unAuthSockets.TryGetValue(connId, out var tuple))
-        {
-            var socket = tuple.Item1;
-            _unAuthSockets[connId] = new Tuple<WebSocket, int>(tuple.Item1, userId);
-            Dictionary<string, WebSocket> auths;
-            if (!_authSockets.TryGetValue(userId, out auths))
-            {
-                _authSockets.AddOrUpdate(userId,
-                    _ => new Dictionary<string, WebSocket>()
-                    {
-                        {connId, socket}
-                    },
-                    (_, sockets) =>
-                    {
-                        sockets.Add(connId, socket);
-                        return sockets;
-                    }
-                );
-            }
-        }
     }
 
     public void SendToAllClients(int userId, string message)

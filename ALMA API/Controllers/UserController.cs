@@ -32,4 +32,12 @@ public class UserController : BaseController
             return new BaseResponse(ex.ToString());
         }
     }
+
+    [AllowAnonymous]
+    [HttpGet]
+    [Route("/")]
+    public ActionResult<DateTime> Index()
+    {
+        return DateTime.Now;
+    }
 }

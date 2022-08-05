@@ -19,21 +19,22 @@ namespace ALMA_API.Controllers
         public AuthController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
         
         [AllowAnonymous]
-        [HttpPost]
+        [HttpPut]
         [Route("register")]
         public ActionResult<AuthResponse> Register(RequestRegister requestRegister)
         {
             var responseRegister = new AuthResponse();
             using var db = new AppDbContext();
-            var farm = db.Farm.FirstOrDefault(farm=> farm.DeviceId == requestRegister.DeviceId);
-            if (farm is null)
-            {
-                responseRegister.MessageList.Add("DeviceId não registrado");
-            }
 
             if (db.User.Any(x => x.Email == requestRegister.Email))
             {
                 responseRegister.MessageList.Add("Este Email já está em uso");
+            }
+            
+            var farm = db.Farm.FirstOrDefault(farm=> farm.DeviceId == requestRegister.DeviceId);
+            if (farm is null)
+            {
+                responseRegister.MessageList.Add("DeviceId não registrado");
             }
 
             if (responseRegister.MessageList.Count != 0) return responseRegister;
@@ -48,40 +49,28 @@ namespace ALMA_API.Controllers
             };
             db.User.Add(user);
             db.SaveChanges();
-            responseRegister = GetAuthResponseFromUser(user);
 
-            return responseRegister;
+            return GetAuthResponseFromUser(user);
         }
         
         [AllowAnonymous]
         [HttpPost]
         [Route("login")]
-        public ActionResult<AuthResponse> Login(RequestLogin requestLogin)
+        public ActionResult<BaseResponse> Login(RequestLogin requestLogin)
         {
-            var responseLogin = new AuthResponse();
-            using (var db = new AppDbContext())
+            using var db = new AppDbContext();
+            var existingUser = db.User.SingleOrDefault(x => x.Email == requestLogin.Email);
+            if (existingUser != null)
             {
-                var existingUser = db.User.SingleOrDefault(x => x.Email == requestLogin.Email);
-                if (existingUser != null)
+                var isPasswordVerified = CryptoUtil.VerifyPassword(requestLogin.Password, existingUser.Salt,
+                    existingUser.Password);
+                if (isPasswordVerified)
                 {
-                    var isPasswordVerified = CryptoUtil.VerifyPassword(requestLogin.Password, existingUser.Salt,
-                        existingUser.Password);
-                    if (isPasswordVerified)
-                    {
-                        responseLogin = GetAuthResponseFromUser(existingUser);
-                    }
-                    else
-                    {
-                        responseLogin.MessageList.Add("Senha incorreta");
-                    }
+                    return GetAuthResponseFromUser(existingUser);
                 }
-                else
-                {
-                    responseLogin.MessageList.Add("Email não encontrado");
-                }
+                return new BaseResponse("Senha incorreta");
             }
-
-            return responseLogin;
+            return new BaseResponse("Email não encontrado");
         }
         
         [AllowAnonymous]
@@ -89,15 +78,13 @@ namespace ALMA_API.Controllers
         [Route("recover")]
         public ActionResult<BaseResponse> Recover(RequestRecover requestRecover)
         {
-            var response = new BaseResponse();
             var newPassword = CryptoUtil.GenerateTemporaryPassword();
             using (var db = new AppDbContext())
             {
                 var user = db.User.FirstOrDefault(x => x.Email == requestRecover.Email);
                 if (user == null)
                 {
-                    response.MessageList.Add("Email não encontrado");
-                    return response;
+                    return new BaseResponse("Email não encontrado");
                 }
                 user.Salt = CryptoUtil.GenerateSalt();
                 user.Password = CryptoUtil.HashMultiple(newPassword, user.Salt);
@@ -107,20 +94,13 @@ namespace ALMA_API.Controllers
             
             var (ok, err) =
                 GoogleMail.SendMessage(requestRecover.Email, "Recuperar Email", $"A sua senha temporária é: {newPassword}");
-            if (ok)
-            {
-                return response with { Success = true };
-            }
-
-            response.MessageList.Add(err!);
-            return response;
+            return ok ? new BaseResponse { Success = true } : new BaseResponse(err!);
         }
         
         [HttpPost]
         [Route("change")]
         public ActionResult<BaseResponse> Change(RequestChange requestChange)
         {
-            var response = new BaseResponse();
             using var db = new AppDbContext();
             var user = db.User.FirstOrDefault(x => x.Email == requestChange.Email);
             if (user == null)
@@ -137,7 +117,7 @@ namespace ALMA_API.Controllers
             user.Password = CryptoUtil.HashMultiple(requestChange.NewPassword, user.Salt);
             user.ChangePassword = false;
             db.SaveChanges();
-            return response with {Success = true};
+            return new BaseResponse {Success = true};
         }
 
         private AuthResponse GetAuthResponseFromUser(User existingUser)

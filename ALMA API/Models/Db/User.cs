@@ -6,7 +6,6 @@ namespace ALMA_API.Models.Db;
 [Index(nameof(Email), IsUnique = true)]
 public class User
 {
-    [JsonIgnore]
     public int Id { get; set; }
     public string Email { get; set; }
     [JsonIgnore]

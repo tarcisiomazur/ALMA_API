@@ -38,19 +38,18 @@ public class WebSocketServerMiddleware
     {
         if (context.WebSockets.IsWebSocketRequest)
         {
-            var socket = await context.WebSockets.AcceptWebSocketAsync();
-            var connId = _manager.AddSocket(socket);
-            
+            using var socket = await context.WebSockets.AcceptWebSocketAsync();
+            if (context.Items["id"] is not int userId)
+            {
+                await HttpResponseWritingExtensions.WriteAsync(context.Response, "{\"message\": \"Unauthorized\"}");
+                return;
+            }
+            var connId = _manager.AddSocket(socket, userId);
             await SendConnId(socket, connId);
             await RunAsync(socket, connId);
         }
         else
         {
-            if (context.Request.Headers.TryGetValue("ConnID", out var connId) &&
-                context.Items.TryGetValue("id", out var id) && id is int clientId)
-            {
-                _manager.Vinculate(connId[0], clientId);
-            }
             await _next(context);
         }
     }
