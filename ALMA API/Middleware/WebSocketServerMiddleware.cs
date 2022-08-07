@@ -50,6 +50,15 @@ public class WebSocketServerMiddleware
         }
         else
         {
+            var request = context.Request;
+
+            request.EnableBuffering();
+            var buffer = new byte[Convert.ToInt32(request.ContentLength)];
+            await request.Body.ReadAsync(buffer, 0, buffer.Length);
+            //get body string here...
+            var requestContent = Encoding.UTF8.GetString(buffer);
+            Console.WriteLine(requestContent);
+            request.Body.Position = 0;
             await _next(context);
         }
     }

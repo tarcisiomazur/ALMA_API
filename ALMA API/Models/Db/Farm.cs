@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace ALMA_API.Models.Db;
 
+[Index(nameof(DeviceId))]
 public class Farm
 {
     public int Id { get; set; }

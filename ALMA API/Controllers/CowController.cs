@@ -28,8 +28,13 @@ public class CowController : BaseController
                 return new BaseResponse("Id do Usuário Incorreta");
             }
 
-            var cows = db.CowsWithUpdateProduction(userId).ToList();
-            
+            db.CowsWithUpdateProduction(userId);
+            var cows = (
+                from cow in db.Cow
+                join user in db.User on cow.FarmId equals user.FarmId
+                where user.Id == userId
+                select cow
+            ).ToList();
             return new AppResponse()
             {
                 Success = true,
@@ -129,7 +134,7 @@ public class CowController : BaseController
         }
     }
 
-    [HttpPost]
+    [HttpPut]
     public ActionResult<BaseResponse> UpdateCow(UpdateCow requestCow)
     {
         try
@@ -158,7 +163,7 @@ public class CowController : BaseController
         }
     }
     
-    [HttpPut]
+    [HttpPost]
     public ActionResult<AppResponse> CreateCow(CreateCow requestCow)
     {
         try

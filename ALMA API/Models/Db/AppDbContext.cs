@@ -1,8 +1,5 @@
 ﻿using System.Data;
-using System.Data.Entity.Core.Objects;
-using System.Data.Entity.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
 
 namespace ALMA_API.Models.Db
 {
@@ -43,9 +40,9 @@ namespace ALMA_API.Models.Db
             }
         }
 
-        public IQueryable<Cow> CowsWithUpdateProduction(int userId)
+        public int CowsWithUpdateProduction(int userId)
         {
-            return Cow.FromSqlRaw($"call updateProductionFromUser({userId});");
+            return Execute($"call UpdateCowProductionFromUser({userId});");
         }
         
         public int Execute(string query)
