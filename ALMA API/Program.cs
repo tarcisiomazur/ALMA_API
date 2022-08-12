@@ -1,10 +1,8 @@
 using System.Text;
-using ALMA_API.Controllers;
 using ALMA_API.Middleware;
 using ALMA_API.Utils;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using WebSocketMiddleware = Microsoft.AspNetCore.WebSockets.WebSocketMiddleware;
 
 DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), "config.env"));
 var builder = WebApplication.CreateBuilder(args);

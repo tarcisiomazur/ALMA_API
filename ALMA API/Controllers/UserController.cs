@@ -23,7 +23,7 @@ public class UserController : BaseController
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.UserData), out var id))
                 return new BaseResponse("Id do Usuário Incorreta");
             var user = db.User.Find(id);
-            db.Entry(user).Reference(p => p.Farm).Load();
+            db.Entry(user!).Reference(p => p.Farm).Load();
             
             return user == null ? new BaseResponse("Usuário não encontrado") : new AppResponse(user);
         }

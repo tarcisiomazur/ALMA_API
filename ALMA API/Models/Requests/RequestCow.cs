@@ -3,7 +3,7 @@ using ALMA_API.Models.Db;
 
 namespace ALMA_API.Models.Requests;
 
-public class UpdateCow: BaseRequest
+public class RequestUpdateCow: BaseRequest
 {
     public int Id { get; set; }
     public string? Tag { get; set; }
@@ -19,7 +19,7 @@ public class UpdateCow: BaseRequest
     
 }
 
-public class CreateCow: BaseRequest
+public class RequestCreateCow: BaseRequest
 {
     public int? Id { get; set; }
     public string Tag { get; set; }

@@ -40,7 +40,7 @@ namespace ALMA_API.Models.Db
             }
         }
 
-        public int CowsWithUpdateProduction(int userId)
+        public int CowsWithUpdateMeanProduction(int userId)
         {
             return Execute($"call UpdateCowProductionFromUser({userId});");
         }

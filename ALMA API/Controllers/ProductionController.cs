@@ -1,24 +1,23 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ALMA_API.Middleware;
 using ALMA_API.Models.Db;
 using ALMA_API.Models.Requests;
 using ALMA_API.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ALMA_API.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/cow")]
-public class CowController : BaseController
+[Route("api/production")]
+public class ProductionController : BaseController
 {
-    public CowController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
+    public ProductionController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
 
     [HttpGet]
-    [Route("all")]
-    public ActionResult<BaseResponse> GetAllCows()
+    [Route("farm/")]
+    public ActionResult<BaseResponse> GetProdutionFarm(int? days)
     {
         try
         {
@@ -28,17 +27,26 @@ public class CowController : BaseController
                 return new BaseResponse("Id do Usuário Incorreta");
             }
 
-            db.CowsWithUpdateMeanProduction(userId);
-            var cows = (
-                from cow in db.Cow
+            var since = DateTime.Today.Subtract(TimeSpan.FromDays(days??30));
+            
+            var productions = (
+                from production in db.Production
+                join cow in db.Cow on production.CowId equals cow.Id
                 join user in db.User on cow.FarmId equals user.FarmId
                 where user.Id == userId
-                select cow
+                where production.Time.Date > since.Date
+                group production by production.Time.Date into farmProduction
+                select new
+                {
+                    Time = farmProduction.Key,
+                    Quantity = farmProduction.Sum(p=> p.Quantity),
+                }
             ).ToList();
-            return new AppResponse()
+            return new FarmProductionResponse()
             {
                 Success = true,
-                Payload = cows
+                Since = since.Date,
+                Payload = productions
             };
         }
         catch (Exception ex)
@@ -51,30 +59,31 @@ public class CowController : BaseController
     }
     
     [HttpGet]
-    public ActionResult<BaseResponse> GetCow([Required]int id)
+    public ActionResult<BaseResponse> GetProduction([Required]int id)
     {
         try
         {
             var userId = (int) (HttpContext.Items["id"] ?? 0);
             using var db = new AppDbContext();
 
-            var firstCow = (
-                from cow in db.Cow
+            var firstProduction = (
+                from production in db.Production
+                join cow in db.Cow on production.CowId equals cow.Id
                 join user in db.User on cow.FarmId equals user.FarmId
                 where user.Id == userId
-                where cow.Id == id
-                select cow
+                where production.Id == id
+                select production
             ).Take(1).FirstOrDefault();
             
-            if (firstCow is null)
+            if (firstProduction is null)
             {
-                return new BaseResponse("Animal não encontrado");
+                return new BaseResponse("Produção não encontrada");
             }
 
             return new AppResponse()
             {
                 Success = true,
-                Payload = firstCow
+                Payload = firstProduction
             };
         }
         catch (Exception ex)
@@ -87,27 +96,28 @@ public class CowController : BaseController
     }
 
     [HttpDelete]
-    public ActionResult<BaseResponse> RemoveCow([Required] int id)
+    public ActionResult<BaseResponse> RemoveProduction([Required] int id)
     {
         try
         {
             var userId = (int) (HttpContext.Items["id"] ?? 0);
             using var db = new AppDbContext();
 
-            var firstCow = (
-                from cow in db.Cow
+            var firstProduction = (
+                from production in db.Production
+                join cow in db.Cow on production.CowId equals cow.Id
                 join user in db.User on cow.FarmId equals user.FarmId
                 where user.Id == userId
-                where cow.Id == id
-                select cow
+                where production.Id == id
+                select production
             ).Take(1).FirstOrDefault();
             
-            if (firstCow is null)
+            if (firstProduction is null)
             {
-                return new BaseResponse("Animal não encontrado");
+                return new BaseResponse("Produção não encontrada");
             }
 
-            db.Cow.Remove(firstCow);
+            db.Production.Remove(firstProduction);
             try
             {
                 db.SaveChanges();
@@ -122,7 +132,7 @@ public class CowController : BaseController
             return new AppResponse()
             {
                 Success = true,
-                Payload = firstCow
+                Payload = firstProduction
             };
         }
         catch (Exception ex)
@@ -135,23 +145,23 @@ public class CowController : BaseController
     }
 
     [HttpPut]
-    public ActionResult<BaseResponse> UpdateCow(RequestUpdateCow requestCow)
+    public ActionResult<BaseResponse> UpdateProduction(RequestUpdateProduction requestProduction)
     {
         try
         {
             using var db = new AppDbContext();
-            var cow = db.Cow.Find(requestCow.Id);
-            if (cow is null)
+            var production = db.Production.Find(requestProduction.Id);
+            if (production is null)
             {
                 return new BaseResponse("Id não encontrado");
             }
 
-            requestCow.Merge(db.Entry(cow));
+            requestProduction.Merge(db.Entry(production));
             db.SaveChanges();
             return new AppResponse()
             {
                 Success = true,
-                Payload = cow
+                Payload = production
             };
         }
         catch(Exception ex)
@@ -164,17 +174,17 @@ public class CowController : BaseController
     }
     
     [HttpPost]
-    public ActionResult<AppResponse> CreateCow(RequestCreateCow requestCow)
+    public ActionResult<AppResponse> CreateProduction(RequestUpdateProduction requestProduction)
     {
         try
         {
             var db = new AppDbContext();
-            var cow = requestCow.Merge(db.Cow.Add(new Cow()));
+            var production = requestProduction.Merge(db.Production.Add(new Production()));
             db.SaveChanges();
             return new AppResponse()
             {
                 Success = true,
-                Payload = cow
+                Payload = production
             };
         }
         catch (Exception ex)

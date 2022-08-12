@@ -122,13 +122,15 @@ namespace ALMA_API.Controllers
 
         private AuthResponse GetAuthResponseFromUser(User existingUser)
         {
-            var claimList = new List<Claim>();
-            claimList.Add(new Claim(ClaimTypes.Name, existingUser.Email));
-            claimList.Add(new Claim(ClaimTypes.Role, existingUser.Role));
-            claimList.Add(new Claim(ClaimTypes.UserData, existingUser.Id.ToString()));
+            var claimList = new List<Claim>
+            {
+                new(ClaimTypes.Name, existingUser.Email),
+                new(ClaimTypes.Role, existingUser.Role),
+                new(ClaimTypes.UserData, existingUser.Id.ToString())
+            };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expireDate = DateTime.UtcNow.AddMinutes(60);
+            var expireDate = DateTime.UtcNow.AddDays(60);
             var timeStamp = DateUtil.ConvertToTimeStamp(expireDate);
             var token = new JwtSecurityToken(
                 claims: claimList,
