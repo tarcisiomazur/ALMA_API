@@ -55,9 +55,8 @@ public class WebSocketServerMiddleware
             request.EnableBuffering();
             var buffer = new byte[Convert.ToInt32(request.ContentLength)];
             await request.Body.ReadAsync(buffer, 0, buffer.Length);
-            //get body string here...
             var requestContent = Encoding.UTF8.GetString(buffer);
-            Console.WriteLine(requestContent);
+            Console.WriteLine($"{request.Path}{request.QueryString}: {requestContent}");
             request.Body.Position = 0;
             await _next(context);
         }

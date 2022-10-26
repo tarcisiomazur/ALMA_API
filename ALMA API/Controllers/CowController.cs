@@ -5,7 +5,6 @@ using ALMA_API.Models.Requests;
 using ALMA_API.Models.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ALMA_API.Controllers;
 
@@ -14,11 +13,95 @@ namespace ALMA_API.Controllers;
 [Route("api/cow")]
 public class CowController : BaseController
 {
+    private const int PageLength = 5;
     public CowController(IConfiguration configuration, WebSocketConnectionManager connectionManager) : base(configuration, connectionManager) { }
+    
+    
+    
+    [HttpGet]
+    [Route("cowsReport")]
+    public ActionResult<BaseResponse> GetCowsReport()
+    {
+        try
+        {
+            using var db = new AppDbContext();
+            if (HttpContext.Items["id"] is not int userId)
+            {
+                return new BaseResponse("Id do Usuário Incorreta");
+            }
 
+            var cows = (
+                from cow in db.Cow
+                join user in db.User on cow.FarmId equals user.FarmId
+                where user.Id == userId
+                where cow.State != CowState.Death
+                group cow by cow.State into cowList
+                select new
+                {
+                    State = cowList.Key,
+                    Count = cowList.Count()
+                }
+            ).ToList();
+            for (int i = 0; i < 5; i++)
+            {
+                if (cows.All(x => x.State != (CowState) i))
+                {
+                    cows.Add(new
+                    {
+                        State = (CowState) i,
+                        Count = 0,
+                    });
+                }
+            }
+            return new AppResponse(cows);
+        }
+        catch (Exception ex)
+        {
+            return new AppResponse()
+            {
+                MessageList = new List<string> {ex.ToString()}
+            };
+        }
+    }
+    
+    [HttpGet]
+    [Route("allIds")]
+    public ActionResult<BaseResponse> GetAllCowIds()
+    {
+        try
+        {
+            using var db = new AppDbContext();
+            if (HttpContext.Items["id"] is not int userId)
+            {
+                return new BaseResponse("Id do Usuário Incorreta");
+            }
+
+            var cows = (
+                from cow in db.Cow
+                join user in db.User on cow.FarmId equals user.FarmId
+                where user.Id == userId
+                where cow.State != CowState.Death
+                orderby cow.Identification
+                select new
+                {
+                    cow.Id,
+                    cow.Identification
+                }
+            ).ToList();
+            return new AppResponse(cows);
+        }
+        catch (Exception ex)
+        {
+            return new AppResponse()
+            {
+                MessageList = new List<string> {ex.ToString()}
+            };
+        }
+    }
+    
     [HttpGet]
     [Route("all")]
-    public ActionResult<BaseResponse> GetAllCows()
+    public ActionResult<BaseResponse> GetAllCows([Required]int page)
     {
         try
         {
@@ -33,12 +116,14 @@ public class CowController : BaseController
                 from cow in db.Cow
                 join user in db.User on cow.FarmId equals user.FarmId
                 where user.Id == userId
+                orderby cow.Identification
                 select cow
-            ).ToList();
-            return new AppResponse()
+            ).Skip((page - 1) * PageLength).Take(PageLength).ToList();
+            return new PagedResponse()
             {
                 Success = true,
-                Payload = cows
+                Payload = cows,
+                EndPage = cows.Count != PageLength
             };
         }
         catch (Exception ex)
@@ -51,7 +136,7 @@ public class CowController : BaseController
     }
     
     [HttpGet]
-    public ActionResult<BaseResponse> GetCow([Required]int id)
+    public ActionResult<BaseResponse> GetCow([Required]int id, string? status, string? filter)
     {
         try
         {

@@ -22,10 +22,14 @@ public class UserController : BaseController
             using var db = new AppDbContext();
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.UserData), out var id))
                 return new BaseResponse("Id do Usuário Incorreta");
-            var user = db.User.Find(id);
-            db.Entry(user!).Reference(p => p.Farm).Load();
-            
-            return user == null ? new BaseResponse("Usuário não encontrado") : new AppResponse(user);
+            if (db.User.Find(id) is not { } user)
+            {
+                return Unauthorized(new BaseResponse("Usuário não encontrado"));
+            }
+
+            db.Entry(user).Reference(p => p.Farm).Load();
+            return new AppResponse(user);
+
         }
         catch(Exception ex)
         {

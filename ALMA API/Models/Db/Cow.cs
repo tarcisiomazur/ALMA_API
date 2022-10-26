@@ -36,7 +36,7 @@ public class Cow
     [Column(TypeName = "DATE")]
     public DateTime? LastInsemination { get; set; }
 
-    [DefaultValue("")] public string Note { get; set; }
+    [DefaultValue("")] public string Note { get; set; } = "";
 
     public int FarmId { get; set; }
 

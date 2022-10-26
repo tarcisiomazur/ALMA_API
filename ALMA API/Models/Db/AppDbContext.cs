@@ -31,6 +31,8 @@ namespace ALMA_API.Models.Db
         public virtual DbSet<Farm> Farm { get; set; }
         public virtual DbSet<Cow> Cow { get; set; }
         public virtual DbSet<Production> Production { get; set; }
+        public virtual DbSet<ManageProduction> ManageProduction { get; set; }
+        public virtual DbSet<Stall> Stall { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

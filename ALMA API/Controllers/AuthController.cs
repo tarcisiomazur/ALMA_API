@@ -31,7 +31,7 @@ namespace ALMA_API.Controllers
                 responseRegister.MessageList.Add("Este Email já está em uso");
             }
             
-            var farm = db.Farm.FirstOrDefault(farm=> farm.DeviceId == requestRegister.DeviceId);
+            var farm = db.Farm.FirstOrDefault(farm => farm.DeviceId == requestRegister.DeviceId);
             if (farm is null)
             {
                 responseRegister.MessageList.Add("DeviceId não registrado");
@@ -48,6 +48,13 @@ namespace ALMA_API.Controllers
                 Farm = farm!
             };
             db.User.Add(user);
+            if (!db.ManageProduction.Any(production => production.Farm == farm))
+            {
+                db.ManageProduction.Add(new ManageProduction()
+                {
+                    Farm = farm!
+                });
+            }
             db.SaveChanges();
 
             return GetAuthResponseFromUser(user);
